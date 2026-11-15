@@ -1,8 +1,9 @@
 "use client";
+import { campusToday } from "@/lib/dates";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { Intake } from "@/lib/schema";
-import { cardFromIntake, INTEREST_TAGS, MAX_DESCRIPTION, MAX_TAGS, staleFields, type InterestTag, type Listing } from "@/lib/troylens/card";
+import { cardFromIntake, draftPublicDescription, joinPlaybook, splitPlaybook, INTEREST_TAGS, MAX_DESCRIPTION, MAX_TAGS, staleFields, type InterestTag, type Listing } from "@/lib/troylens/card";
 import { useConfirm } from "./ConfirmDialog";
 import { EventCard } from "./EventCard";
 import { Alert, Button, cx, Tag, TextArea } from "./ui";
@@ -18,6 +19,7 @@ export function PublishCard({
   dirty,
   isSample,
   initialListing,
+  onListingChange,
 }: {
   planId: string;
   planVersion: number;
@@ -25,10 +27,17 @@ export function PublishCard({
   dirty: boolean;
   isSample: boolean;
   initialListing: Listing | null;
+  /** Lets the plan page know when the card is published or removed. */
+  onListingChange?: (listing: Listing | null) => void;
 }) {
   const confirm = useConfirm();
   const [listing, setListing] = useState<Listing | null>(initialListing);
-  const [description, setDescription] = useState(initialListing?.description ?? "");
+  // Unpublished cards start from a draft joined from the plan (purpose, description without money, guests, food).
+  const [description, setDescription] = useState(() => (initialListing ? splitPlaybook(initialListing.description).description : draftPublicDescription(intake)));
+  // After the event: a short note that turns the shared event into a playbook for other clubs.
+  const [howItWent, setHowItWent] = useState(() => (initialListing ? splitPlaybook(initialListing.description).howItWent : ""));
+  const eventPassed = !!intake.date && intake.date < campusToday();
+  const combined = joinPlaybook(description, howItWent);
   const [tags, setTags] = useState<InterestTag[]>(initialListing?.tags ?? []);
   const [busy, setBusy] = useState<"publish" | "retract" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,22 +46,22 @@ export function PublishCard({
   const { fields, notes } = useMemo(() => cardFromIntake(intake), [intake]);
   const blocker = notes.find((n) => n.level === "blocker");
   const stale = listing && !dirty ? staleFields(listing, fields) : [];
-  const textChanged = listing ? listing.description !== description.trim() || [...listing.tags].sort().join() !== [...tags].sort().join() : false;
+  const textChanged = listing ? listing.description !== combined || [...listing.tags].sort().join() !== [...tags].sort().join() : false;
 
   const toggle = (t: InterestTag) =>
     setTags((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : cur.length >= MAX_TAGS ? cur : [...cur, t]));
 
   async function publish() {
     const ok = await confirm({
-      title: listing ? "Update the public card?" : "Publish this event card?",
+      title: listing ? "Update your shared event?" : "Share this event with other clubs?",
       body: (
         <div className="space-y-2">
-          <p>Anyone using EvntSC Discover will be able to see:</p>
-          <p className="font-medium">title, organizer, confirmed date and time, location (or “to be announced”), your public description, and topic tags.</p>
-          <p>Your budget, checklist, notes, open questions, and account details stay private. You can retract the card at any time.</p>
+          <p>Officers using EvntSC Discover will be able to see:</p>
+          <p className="font-medium">title, club, confirmed date and time, location (or “to be announced”), your description{howItWent.trim() ? ", how it went," : ""} and topic tags.</p>
+          <p>Your budget, checklist, notes, open questions, and account details stay private. You can stop sharing at any time.</p>
         </div>
       ),
-      confirmLabel: listing ? "Update card" : "Publish card",
+      confirmLabel: listing ? "Update" : "Share event",
     });
     if (!ok) return;
     setBusy("publish");
@@ -62,13 +71,15 @@ export function PublishCard({
       const res = await fetch(`/api/plans/${planId}/listing`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planVersion, description: description.trim(), tags }),
+        body: JSON.stringify({ planVersion, description: combined, tags }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? `Publishing failed (${res.status}).`);
       setListing(data.listing);
-      setDescription(data.listing.description);
-      setMessage(listing ? "Card updated." : "Card published.");
+      onListingChange?.(data.listing);
+      setDescription(splitPlaybook(data.listing.description).description);
+      setHowItWent(splitPlaybook(data.listing.description).howItWent);
+      setMessage(listing ? "Shared event updated." : "Shared with other clubs.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Publishing failed.");
     } finally {
@@ -78,9 +89,9 @@ export function PublishCard({
 
   async function retract() {
     const ok = await confirm({
-      title: "Retract the public card?",
-      body: "The card disappears from Discover and its link stops working. Your plan isn't affected, and you can publish again later.",
-      confirmLabel: "Retract card",
+      title: "Stop sharing this event?",
+      body: "It disappears from Discover and its link stops working. Your plan isn't affected, and you can share it again later.",
+      confirmLabel: "Stop sharing",
       tone: "danger",
     });
     if (!ok) return;
@@ -92,6 +103,7 @@ export function PublishCard({
       const data = await res.json().catch(() => ({}));
       if (!res.ok && res.status !== 404) throw new Error(data.error ?? `Retracting failed (${res.status}).`);
       setListing(null);
+      onListingChange?.(null);
       setMessage("Card retracted. It is no longer public.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Retracting failed.");
@@ -101,36 +113,46 @@ export function PublishCard({
   }
 
   return (
-    <section aria-labelledby="card-h" className="no-print mt-6 rounded-xl border border-line bg-card p-4 sm:p-6">
+    <section id="publish" aria-labelledby="card-h" className="no-print mt-6 scroll-mt-6 rounded-xl border border-line bg-card p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 id="card-h" className="flex items-center gap-2.5 font-display text-xl font-bold">
           <span aria-hidden className="h-5 w-1 rounded-full bg-gold" />
-          Public event card <span className="font-sans text-sm font-normal text-muted">· TroyLens (optional)</span>
+          Share with other clubs
         </h2>
-        {listing ? <Tag tone="green">Published</Tag> : <Tag>Not published</Tag>}
+        {listing ? <Tag tone="green">Shared</Tag> : <Tag>Not shared</Tag>}
       </div>
       <p className="mt-1 text-sm text-muted">
-        Share a student-facing card on{" "}
+        Other club officers see shared events on{" "}
         <Link href="/discover" className="underline">
           Discover
-        </Link>
-        . Only the fields shown in the preview are shared; nothing is published until you confirm.
+        </Link>{" "}
+        to avoid date clashes, find co-hosts, and borrow ideas. Students find events on EngageSC.
       </p>
 
       <div className="mt-4 grid gap-5 lg:grid-cols-[1fr_minmax(0,380px)]">
         <div className="space-y-4">
           <TextArea
             label="Public description"
-            hint={`What students will see. Don't include budget or internal details. ${description.length}/${MAX_DESCRIPTION}`}
+            hint={`What other officers will see. Don't include budget or internal details. ${combined.length}/${MAX_DESCRIPTION}`}
             rows={4}
             maxLength={MAX_DESCRIPTION}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
-          {intake.description.trim() && !description.trim() && (
-            <Button size="sm" variant="ghost" onClick={() => setDescription(intake.description.trim().slice(0, MAX_DESCRIPTION))}>
-              Start from the plan&apos;s description
+          {draftPublicDescription(intake) && description.trim() !== draftPublicDescription(intake) && (
+            <Button size="sm" variant="ghost" onClick={() => setDescription(draftPublicDescription(intake))}>
+              {description.trim() ? "Replace with a draft from the plan" : "Fill from the plan's details"}
             </Button>
+          )}
+          {(eventPassed || howItWent) && (
+            <TextArea
+              label="How it went (optional)"
+              hint="After the event: turnout, what worked, what you'd change. This makes your event a playbook other clubs can plan from."
+              rows={3}
+              maxLength={600}
+              value={howItWent}
+              onChange={(e) => setHowItWent(e.target.value)}
+            />
           )}
           <fieldset>
             <legend className="text-sm font-medium">
@@ -176,8 +198,8 @@ export function PublishCard({
             </Alert>
           )}
           {stale.length > 0 && (
-            <Alert tone="warning" title="The public card is out of date">
-              The saved plan&apos;s {stale.join(", ")} changed since you published. Update the card to share the current details.
+            <Alert tone="warning" title="Your shared event is out of date">
+              The saved plan&apos;s {stale.join(", ")} changed since you shared it. Update it to share the current details.
             </Alert>
           )}
           {error && <Alert tone="error">{error}</Alert>}
@@ -189,15 +211,15 @@ export function PublishCard({
               onClick={publish}
               disabled={busy !== null || dirty || !!blocker || (!!listing && stale.length === 0 && !textChanged)}
             >
-              {busy === "publish" ? "Publishing…" : listing ? "Update card" : "Publish card"}
+              {busy === "publish" ? "Sharing…" : listing ? "Update shared event" : "Share event"}
             </Button>
             {listing && (
               <>
                 <Link href={`/events/${listing.id}`} className="inline-flex items-center rounded-md border border-line-strong px-4 py-2 text-sm font-medium hover:border-ink">
-                  View public card
+                  View shared page
                 </Link>
                 <Button variant="danger" onClick={retract} disabled={busy !== null}>
-                  {busy === "retract" ? "Retracting…" : "Retract card"}
+                  {busy === "retract" ? "Removing…" : "Stop sharing"}
                 </Button>
               </>
             )}
@@ -205,8 +227,8 @@ export function PublishCard({
         </div>
 
         <div>
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-muted">Preview — exactly what will be public</p>
-          <EventCard card={{ ...fields, description: description.trim(), tags, isSample }} />
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-muted">Preview: what other officers will see</p>
+          <EventCard card={{ ...fields, description: combined, tags, isSample }} />
         </div>
       </div>
     </section>

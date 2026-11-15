@@ -34,8 +34,8 @@ export default async function EventPage({ params }: PageProps<"/events/[id]">) {
         </Link>
       </div>
       <p className="mt-4 text-xs text-muted">
-        Published by the organizer through EvntSC. Details can change — check with the organizer before you go. EvntSC is not affiliated with or
-        endorsed by USC.
+        Shared by this club&apos;s officers on EvntSC so other clubs can plan around it, team up, or borrow the idea. Students find events on
+        EngageSC.
       </p>
     </div>
   );

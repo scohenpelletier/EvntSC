@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { formatDate } from "@/lib/dates";
-import { INTEREST_TAGS, tagLabel, type InterestTag } from "@/lib/troylens/card";
+import { INTEREST_TAGS, splitPlaybook, tagLabel, type InterestTag } from "@/lib/troylens/card";
 import { FORMATS, formatLabel, offsetText, type AroundPlan, type Club, type FormatId, type Idea } from "@/lib/troylens/discover";
 import { whenText } from "./EventCard";
 import { cx, Tag } from "./ui";
@@ -52,14 +52,20 @@ function IdeaCard({ idea, signedIn }: { idea: Idea; signedIn: boolean }) {
         <span title="Format guessed from the title and description">
           <Tag tone="cardinal">{formatLabel(idea.format)}</Tag>
         </span>
-        {idea.past && <Tag>Past</Tag>}
+        {idea.past && <Tag>Completed</Tag>}
+        {splitPlaybook(l.description).howItWent && <Tag tone="green">Has playbook</Tag>}
         {l.isSample && <Tag tone="amber">Sample</Tag>}
       </div>
       <h3 className="mt-2 font-semibold leading-snug">{l.title || "Untitled event"}</h3>
       <p className="text-sm text-muted">
         {l.organizer || "Student organization"} · {l.date ? formatDate(l.date) : "Date TBA"}
       </p>
-      {l.description && <p className="mt-2 line-clamp-3 text-sm">{l.description}</p>}
+      {splitPlaybook(l.description).description && <p className="mt-2 line-clamp-3 text-sm">{splitPlaybook(l.description).description}</p>}
+      {splitPlaybook(l.description).howItWent && (
+        <p className="mt-2 line-clamp-2 text-sm">
+          <span className="font-semibold">How it went:</span> {splitPlaybook(l.description).howItWent}
+        </p>
+      )}
       {l.tags.length > 0 && (
         <p className="mt-2 flex flex-wrap gap-1">
           {l.tags.map((t) => (

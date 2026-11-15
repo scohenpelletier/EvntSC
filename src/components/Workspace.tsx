@@ -228,11 +228,21 @@ export function Workspace({
     return () => document.removeEventListener("click", onClick, true);
   }, [confirm, router]);
 
-  // Drawer focus management.
+  // Drawer focus management. A checklist "Add …" button opens the drawer at one field (found by its label).
+  const [focusField, setFocusField] = useState<string | null>(null);
+  const openDetailsAt = (fieldLabel: string) => {
+    setFocusField(fieldLabel);
+    setDrawer(true);
+  };
   useEffect(() => {
     if (!drawer) return;
     const el = drawerRef.current;
-    el?.querySelector<HTMLElement>("input,select,textarea,button")?.focus();
+    const label = focusField ? [...(el?.querySelectorAll("label") ?? [])].find((l) => l.textContent?.trim() === focusField) : undefined;
+    const target = label?.htmlFor ? document.getElementById(label.htmlFor) : null;
+    if (target) {
+      target.scrollIntoView({ block: "center" });
+      target.focus({ preventScroll: true });
+    } else el?.querySelector<HTMLElement>("input,select,textarea,button")?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setDrawer(false);
     };
@@ -241,8 +251,9 @@ export function Workspace({
     return () => {
       document.removeEventListener("keydown", onKey);
       opener?.focus();
+      setFocusField(null);
     };
-  }, [drawer]);
+  }, [drawer, focusField]);
 
   async function runReview() {
     setReview({ busy: true, error: null, message: null });
@@ -311,6 +322,33 @@ export function Workspace({
   const issues = plan.budget.findings.filter((f) => f.severity === "issue").length;
 
   const timeText = doc.intake.startTime ? `${formatTime(doc.intake.startTime)}${doc.intake.endTime ? `–${formatTime(doc.intake.endTime)}` : ""}` : null;
+  // "Publish event!" appears once every checklist item is done and the event has no public card yet.
+  const [published, setPublished] = useState(!!troyLens?.listing);
+  const activeTasks = plan.tasks.filter((t) => t.applicable);
+  const checklistDone = activeTasks.length > 0 && activeTasks.every((t) => t.status === "completed");
+  const canPublish = !!troyLens && !troyLens.unavailable && mode.kind === "remote";
+  const showPublish = canPublish && checklistDone && !published;
+  // Completed: the event date has passed and every checklist item is done.
+  const completed = checklistDone && !!doc.intake.date && doc.intake.date < today;
+  const goToPublish = () => {
+    const el = document.getElementById("publish");
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    el?.querySelector<HTMLElement>("textarea")?.focus({ preventScroll: true });
+  };
+  const publishButton = (cls?: string) => (
+    // Plain button (not <Button>) so its size isn't overridden by the shared size classes.
+    <button
+      type="button"
+      onClick={goToPublish}
+      className={cx(
+        "inline-flex items-center justify-center rounded-lg bg-gold px-8 py-4 text-xl font-extrabold text-cardinal-deep shadow-xl ring-4 ring-white/70 transition-transform hover:scale-[1.03] hover:bg-gold-soft focus-visible:outline-none focus-visible:ring-white motion-reduce:transition-none motion-reduce:hover:scale-100",
+        cls,
+      )}
+    >
+      Publish event!
+    </button>
+  );
+
   const saveButton = (cls?: string, variant: "gold" | "primary" = "gold") => (
     <Button variant={variant} className={cls} onClick={doSave} disabled={save.kind === "saving" || save.kind === "saved"} aria-keyshortcuts="Control+S">
       {save.kind === "saving" ? "Saving…" : save.kind === "saved" ? "Saved" : "Save"}
@@ -333,6 +371,7 @@ export function Workspace({
               <div className="flex flex-wrap items-center gap-3">
                 <h1 className="font-display text-3xl leading-[1.1] sm:text-[44px]">{doc.intake.title.trim() || "Untitled event"}</h1>
                 {isSample && <Tag tone="gold">Fictional sample</Tag>}
+                {completed && <Tag tone="green">Completed</Tag>}
               </div>
               <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-white/90 sm:text-[15px]">
                 <span>
@@ -342,7 +381,8 @@ export function Workspace({
                 <SaveIndicator save={save} updatedAt={mode.updatedAt} />
               </div>
             </div>
-            <div className="hidden flex-wrap gap-2.5 sm:flex">
+            <div className="hidden flex-wrap items-center gap-2.5 sm:flex">
+              {showPublish && publishButton()}
               <Button ref={openerRef} variant="onCardinal" onClick={() => setDrawer(true)}>
                 Edit details
               </Button>
@@ -466,6 +506,7 @@ export function Workspace({
                 highlight={change?.summary ?? { added: [], recheck: [] }}
                 onDraft={draftForTask}
                 onGotoContacts={() => setTab("contacts")}
+                onEditDetail={openDetailsAt}
               />
             </div>
           )}
@@ -514,10 +555,10 @@ export function Workspace({
         {troyLens && mode.kind === "remote" && (
           troyLens.unavailable ? (
             <div className="no-print mt-6">
-              <Alert tone="info" title="Public event cards unavailable">{troyLens.unavailable}</Alert>
+              <Alert tone="info" title="Sharing with other clubs is unavailable">{troyLens.unavailable}</Alert>
             </div>
           ) : (
-            <PublishCard planId={mode.id} planVersion={mode.version} intake={doc.intake} dirty={save.kind !== "saved"} isSample={isSample} initialListing={troyLens.listing} />
+            <PublishCard planId={mode.id} planVersion={mode.version} intake={doc.intake} dirty={save.kind !== "saved"} isSample={isSample} initialListing={troyLens.listing} onListingChange={(l) => setPublished(!!l)} />
           )
         )}
 
@@ -525,7 +566,8 @@ export function Workspace({
 
       {/* Mobile: sticky Edit details / Save */}
       <div aria-hidden className="h-20 sm:hidden" />
-      <div className="no-print fixed inset-x-0 bottom-0 z-30 flex gap-2.5 border-t border-line bg-card px-4 pt-3 pb-[max(env(safe-area-inset-bottom),12px)] sm:hidden">
+      <div className="no-print fixed inset-x-0 bottom-0 z-30 flex flex-wrap gap-2.5 border-t border-line bg-card px-4 pt-3 pb-[max(env(safe-area-inset-bottom),12px)] sm:hidden">
+        {showPublish && publishButton("w-full")}
         <Button className="flex-1" onClick={() => setDrawer(true)}>
           Edit details
         </Button>

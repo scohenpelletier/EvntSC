@@ -5,9 +5,9 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getUser } from "@/lib/supabase/server";
 
 const FEATURES: [string, string, string][] = [
-  ["01", "Budget checks you can trust", "Integer-cent math, known subtotals when costs are missing, and warnings that come from your own numbers."],
-  ["02", "Straight to the point", "Just what your event needs, with a link to the right USC office. Gaps stay open questions."],
-  ["03", "Revise without losing work", "Change the date or budget and see exactly which tasks need a recheck. Your notes stay put."],
+  ["01", "A plan you can trust", "The steps in the right order, the USC offices to contact, and a budget that never counts unknown costs as $0."],
+  ["02", "Change it without losing work", "Say what changed in plain words. See exactly which tasks need a recheck; your notes and costs stay put."],
+  ["03", "Learn from other clubs", "See what other clubs have run, what's happening around your date, and plan something like it."],
 ];
 
 /** Static, clearly fictional preview of what a plan surfaces. Not live data. */
@@ -49,11 +49,11 @@ export default async function Home() {
       <section className="on-cardinal bg-cardinal text-white">
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[1fr_auto]">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">For USC student organizers</p>
-            <h1 className="mt-4 max-w-3xl font-display text-[42px] leading-[1.05] sm:text-6xl lg:text-[72px]">Turn a workshop idea into a plan you can actually check.</h1>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-gold">For USC club officers</p>
+            <h1 className="mt-4 max-w-3xl font-display text-[42px] leading-[1.05] sm:text-6xl lg:text-[72px]">Plan your club&apos;s event with confidence.</h1>
             <p className="mt-6 max-w-2xl text-lg text-white/88">
-              Describe your on-campus workshop or info session. EvntSC checks your budget arithmetic, lists the requirements it can cite from
-              official USC pages, keeps unknowns visible as questions, and exports a planning packet.
+              Describe your event in plain words. EvntSC builds the checklist, the USC contacts, the budget, and the emails, and shows what changes
+              when your plans do. Then learn from what other clubs have done.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               {configured ? (
@@ -99,8 +99,8 @@ export default async function Home() {
         </ul>
         <div className="on-cardinal mt-10 flex flex-col gap-3 rounded-xl bg-cardinal-deep px-6 py-5 text-white sm:flex-row sm:items-center sm:gap-6">
           <p className="text-xs font-bold uppercase tracking-[0.14em] text-gold">Scope</p>
-          <p className="text-sm">Basic on-campus workshops and information sessions.</p>
-          <p className="text-sm text-white/80 sm:ml-auto">EvntSC cannot book rooms, submit funding applications, or approve events.</p>
+          <p className="text-sm">On-campus networking events, workshops, and info sessions.</p>
+          <p className="text-sm text-white/80 sm:ml-auto">EvntSC doesn&apos;t book rooms, approve events, or promote them. Students find events on EngageSC.</p>
         </div>
       </div>
     </div>

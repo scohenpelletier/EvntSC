@@ -617,7 +617,7 @@ export function evaluate(intake: Intake, budget: BudgetSummary, today: string | 
         links: [],
         depValues: dv,
       });
-    s("sugg:promote", "Start promoting the event", "Post on your channels and share a sign-up link.", SUGGESTION_OFFSETS.promote, deps(intake, ["date"]), "Event date is set.");
+    s("sugg:promote", "Start promoting the event", "Post it on EngageSC so students can find it, then share it on your club's channels with a sign-up link.", SUGGESTION_OFFSETS.promote, deps(intake, ["date"]), "Event date is set.");
     if (intake.food === "yes")
       s("sugg:food-headcount", "Confirm final headcount for food", "Send your caterer an updated count.", SUGGESTION_OFFSETS.foodHeadcount, deps(intake, ["date", "attendance", "food"]), "Food will be served.", "rule:tes-catering");
     if (intake.outsideSpeakers === "yes")

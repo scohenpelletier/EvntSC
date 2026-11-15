@@ -74,8 +74,8 @@ export default async function DiscoverPage() {
         {problem && <Alert tone="warning">{problem}</Alert>}
         {!problem && listings.length === 0 && (
           <div className="rounded-xl border border-dashed border-line-strong bg-card p-8 text-center">
-            <p className="font-display text-xl font-bold">No published events yet</p>
-            <p className="mt-1 text-sm text-muted">When officers publish an event card from their plan, it shows up here.</p>
+            <p className="font-display text-xl font-bold">No shared events yet</p>
+            <p className="mt-1 text-sm text-muted">When officers share an event from their plan, it shows up here.</p>
           </div>
         )}
         {!problem && listings.length > 0 && (

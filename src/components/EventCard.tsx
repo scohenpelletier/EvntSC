@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formatDate, formatTime, monthDay } from "@/lib/dates";
-import { tagLabel, type CardFields } from "@/lib/troylens/card";
+import { splitPlaybook, tagLabel, type CardFields } from "@/lib/troylens/card";
 import { DateChip, Tag } from "./ui";
 
 // Local helper: ui.tsx is a client module, so its functions can't be *called* while this renders on the server.
@@ -15,7 +15,7 @@ export function whenText(c: Pick<CardFields, "date" | "startTime" | "endTime">):
   return `${day} · ${formatTime(c.startTime)}${c.endTime ? `–${formatTime(c.endTime)}` : ""} Pacific`;
 }
 
-/** The public, student-facing card. Contains only the shareable fields. */
+/** A shared event, as other club officers see it. Contains only the shareable fields. */
 export function EventCard({
   card,
   href,
@@ -35,6 +35,7 @@ export function EventCard({
   const title = card.title || "Untitled event";
   const md = card.date ? monthDay(card.date) : null;
   const tba = card.locationStatus !== "confirmed";
+  const playbook = splitPlaybook(card.description);
   return (
     <article className={cx("overflow-hidden rounded-xl border border-line bg-card", className)}>
       {explanation && (
@@ -78,7 +79,13 @@ export function EventCard({
               </dd>
             </div>
           </dl>
-          {card.description && <p className="mt-3 whitespace-pre-wrap text-sm text-muted">{card.description}</p>}
+          {playbook.description && <p className="mt-3 whitespace-pre-wrap text-sm text-muted">{playbook.description}</p>}
+          {playbook.howItWent && (
+            <div className="mt-3 rounded-md border-l-4 border-gold bg-gold-wash px-3 py-2 text-sm">
+              <p className="font-semibold">How it went</p>
+              <p className="whitespace-pre-wrap">{playbook.howItWent}</p>
+            </div>
+          )}
           {(card.tags.length > 0 || card.isSample) && (
             <ul className="mt-3 flex flex-wrap gap-1.5" aria-label="Topics">
               {card.isSample && (

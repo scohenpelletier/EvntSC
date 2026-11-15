@@ -57,6 +57,14 @@ const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const money = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2));
 
+const HEDGE = /\b(maybe|might|possibly|perhaps|probably|hoping|hopefully|not sure|undecided|thinking about|considering)\b|\?/i;
+const FOOD_WORDS = /\b(food|snacks?|pizza|catering|caterer|refreshments?|drinks|lunch|dinner|breakfast|boba|coffee)\b/i;
+
+/** True when a sentence that mentions the topic also hedges ("maybe with snacks?"). */
+export function hedgedAbout(text: string, topic: RegExp): boolean {
+  return (text.match(/[^.!?\n]+[.!?]*/g) ?? []).some((sentence) => topic.test(sentence) && HEDGE.test(sentence));
+}
+
 export function intakeProposalFrom(ai: IntakeLike, description: string): IntakeProposal {
   const fields: Partial<Intake> = {};
   const notices: string[] = [];
@@ -95,6 +103,11 @@ export function intakeProposalFrom(ai: IntakeLike, description: string): IntakeP
   fields.venueStatus = ai.venueStatus;
   fields.recognition = ai.recognition;
   fields.food = ai.food;
+  // Hedged wording is not a decision. Models sometimes answer "yes" anyway, so check in code too.
+  if (ai.food !== "unknown" && hedgedAbout(description, FOOD_WORDS)) {
+    fields.food = "unknown";
+    notices.push("Food sounds undecided in your description, so it's left as unknown.");
+  }
   fields.outsideSpeakers = ai.outsideSpeakers;
   fields.vendors = ai.vendors;
   fields.fundraising = ai.fundraising;

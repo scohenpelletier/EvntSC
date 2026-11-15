@@ -42,7 +42,7 @@ export function WelcomeForm({ initialInterests, initialOrg, discover }: { initia
       {discover && (
         <section className="rounded-xl border border-line bg-card p-5 sm:p-6">
           <h2 className="font-display text-2xl font-bold">What are you into?</h2>
-          <p className="mt-1 text-sm text-muted">Pick a few topics. Discover shows matching student events first. Change them any time in Settings.</p>
+          <p className="mt-1 text-sm text-muted">Pick a few topics. Discover shows related clubs&apos; events first. Change them any time in Settings.</p>
           <div role="group" aria-label="Interests" className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
             {INTEREST_TAGS.map((t) => {
               const on = selected.includes(t.id);
