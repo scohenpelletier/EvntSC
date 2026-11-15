@@ -167,13 +167,13 @@ export function AiDescribe({
             </p>
           ))}
           <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[420px] text-sm">
+          <table className="w-full table-fixed text-sm [overflow-wrap:anywhere]">
             <thead>
               <tr className="text-left text-xs font-bold uppercase tracking-wide text-muted">
                 <th className="w-8 py-1">
                   <span className="sr-only">Accept</span>
                 </th>
-                <th className="py-1">Field</th>
+                <th className="w-[28%] py-1">Field</th>
                 <th className="py-1">Current</th>
                 <th className="py-1">Proposed</th>
               </tr>

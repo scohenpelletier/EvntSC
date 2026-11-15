@@ -577,7 +577,7 @@ export function Workspace({
       {/* Intake drawer */}
       {drawer && (
         <div className="no-print fixed inset-0 z-40 flex justify-end bg-ink/30" onMouseDown={(e) => e.target === e.currentTarget && setDrawer(false)}>
-          <div ref={drawerRef} role="dialog" aria-modal="true" aria-labelledby="drawer-h" className="flex h-full w-full flex-col bg-paper shadow-2xl sm:max-w-xl">
+          <div ref={drawerRef} role="dialog" aria-modal="true" aria-labelledby="drawer-h" className="flex h-full w-full min-w-0 flex-col overflow-x-clip bg-paper shadow-2xl sm:max-w-xl">
             <div className="on-cardinal flex items-center justify-between border-b-4 border-gold bg-cardinal px-4 py-3 text-white">
               <h2 id="drawer-h" className="font-display text-xl font-bold">
                 Event details
