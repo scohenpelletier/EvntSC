@@ -53,6 +53,8 @@ export const intakeSchema = z.object({
   guestCount: z.number().int().nonnegative().max(10000).nullable().default(null),
   accessibility: triState.default("unknown"),
   accessibilityNotes: short(1000).default(""),
+  /** Set by "Plan something like this" on Discover: the published event this plan was modelled on (credited). */
+  inspiredBy: z.object({ listingId: short(64), title: short(160), organizer: short(160) }).nullable().default(null),
   /** Money fields are kept as the organizer typed them and parsed by lib/money. */
   budgetTarget: short(20),
   fundingRequested: short(20),
@@ -189,6 +191,7 @@ export function emptyIntake(): Intake {
     guestCount: null,
     accessibility: "unknown",
     accessibilityNotes: "",
+    inspiredBy: null,
     budgetTarget: "",
     fundingRequested: "",
     fundingConfirmed: "",

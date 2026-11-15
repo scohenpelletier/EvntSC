@@ -90,10 +90,6 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           <footer className="no-print on-cardinal bg-cardinal-deep text-white">
             <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-7 sm:flex-row sm:items-center sm:gap-10 sm:px-6">
               <Wordmark className="text-xl" />
-              <p className="text-xs leading-relaxed text-white/80">
-                EvntSC is an independent student-built prototype. It is not affiliated with or endorsed by USC, does not verify officer identity, and
-                cannot approve events or guarantee funding. Always confirm with the linked offices.
-              </p>
             </div>
           </footer>
           {user && <BottomNav discover={discover} />}
