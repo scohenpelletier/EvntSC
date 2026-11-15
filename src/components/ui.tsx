@@ -96,7 +96,7 @@ export function CardTitle({ children, as: As = "h2", className }: { children: Re
 
 /** Small uppercase label used above headings ("eyebrow"). */
 export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
-  return <p className={cx("text-xs font-bold uppercase tracking-[0.14em]", className ?? "text-cardinal")}>{children}</p>;
+  return <p className={cx("text-xs font-bold uppercase tracking-[0.14em] break-words", className ?? "text-cardinal")}>{children}</p>;
 }
 
 /** Full-width cardinal band at the top of a page: eyebrow, Caslon title, optional subtitle and actions. */
@@ -163,7 +163,7 @@ export function TextField({ label, hint, error, className, ...rest }: FieldProps
         id={id}
         aria-invalid={!!error}
         aria-describedby={hint || error ? `${id}-d` : undefined}
-        className={cx("w-full rounded-md border bg-white px-3 py-2 text-sm", error ? "border-cardinal" : "border-line-strong")}
+        className={cx("w-full rounded-md border bg-white px-3 py-2 text-base sm:text-sm", error ? "border-cardinal" : "border-line-strong")}
         {...rest}
       />
       {(hint || error) && (
@@ -185,7 +185,7 @@ export function TextArea({ label, hint, error, className, ...rest }: FieldProps 
       <textarea
         id={id}
         aria-describedby={hint || error ? `${id}-d` : undefined}
-        className={cx("w-full rounded-md border bg-white px-3 py-2 text-sm", error ? "border-cardinal" : "border-line-strong")}
+        className={cx("w-full rounded-md border bg-white px-3 py-2 text-base sm:text-sm", error ? "border-cardinal" : "border-line-strong")}
         {...rest}
       />
       {(hint || error) && (

@@ -35,12 +35,12 @@ export default async function SettingsPage() {
   ];
   return (
     <div>
-      <PageBand eyebrow={user.email} title="Settings" subtitle="Your account, defaults for new plans, and how EvntSC keeps you posted." />
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[220px_1fr]">
-        <nav aria-label="Settings sections" className="lg:sticky lg:top-6 lg:self-start">
-          <ul className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:flex-col lg:gap-1">
+      <PageBand eyebrow="Your account" title="Settings" subtitle="Your account, defaults for new plans, and how EvntSC keeps you posted." />
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-8 lg:grid-cols-[220px_minmax(0,1fr)]">
+        <nav aria-label="Settings sections" className="min-w-0 lg:sticky lg:top-6 lg:self-start">
+          <ul className="flex flex-wrap gap-2 lg:flex-col lg:flex-nowrap lg:gap-1">
             {nav.map(([id, label]) => (
-              <li key={id} className="shrink-0">
+              <li key={id}>
                 <a
                   href={`#${id}`}
                   className="block rounded-md border border-line-strong bg-card px-3 py-1.5 text-sm font-semibold hover:border-cardinal hover:text-cardinal lg:border-0 lg:border-l-[3px] lg:border-transparent lg:bg-transparent lg:hover:border-gold"
