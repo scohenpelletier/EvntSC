@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { IntakeProposal } from "@/lib/ai/sanitize";
 import { Alert, Button } from "./ui";
 
@@ -39,16 +39,14 @@ async function toJpegBase64(file: File): Promise<{ mimeType: string; base64: str
 export function FlyerUpload({ onResult, onManual }: { onResult: (transcript: string, proposal: IntakeProposal) => void; onManual: () => void }) {
   const input = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!file) return setPreview(null);
-    const url = URL.createObjectURL(file);
-    setPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
+  // Preview URL is derived from the file; the effect only frees it when the file changes.
+  const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
+  useEffect(() => () => {
+    if (preview) URL.revokeObjectURL(preview);
+  }, [preview]);
 
   async function read() {
     if (!file) return;

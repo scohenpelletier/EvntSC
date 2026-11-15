@@ -31,6 +31,8 @@ export function NewPlan({
   const [flyerSeed, setFlyerSeed] = useState<{ key: number; text: string; proposal: IntakeProposal } | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(!aiEnabled);
   useEffect(() => {
+    // The URL hash only exists in the browser, so it can't be read during the server render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync from window.location after mount
     if (window.location.hash === "#details") setDetailsOpen(true);
   }, []);
   const [formKey, setFormKey] = useState(0);
