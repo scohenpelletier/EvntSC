@@ -57,6 +57,39 @@ body {
   font-family: "national-2", "National 2", var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
 }
 
+/*
+ * Mobile: keep forms inside the screen.
+ * - Fieldsets default to min-width: min-content, so a wide child (a date picker,
+ *   a long select option) would stretch the whole form past the viewport.
+ * - Form controls inside grid/flex rows must be allowed to shrink.
+ * - iOS Safari gives date/time inputs a fixed native width that ignores width: 100%.
+ * - overflow-x: clip is a last guard against sideways panning; unlike hidden it
+ *   doesn't create a scroll container, so sticky bars keep working.
+ */
+body {
+  overflow-x: clip;
+}
+fieldset {
+  min-width: 0;
+}
+input,
+select,
+textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+input[type="date"],
+input[type="time"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-height: 2.5rem;
+  text-align: left;
+}
+input[type="date"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value {
+  text-align: left;
+}
+
 :focus-visible {
   outline: 3px solid var(--cardinal);
   outline-offset: 2px;
