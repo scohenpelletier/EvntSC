@@ -144,6 +144,26 @@ async function main() {
       `plans ${after.plans?.length}`,
     );
 
+    // Sharing: an event shared before its date was confirmed picks up the date on the next save.
+    {
+      const shareDoc = structuredClone(SAMPLES.find((x) => x.key === "founder-night")!.doc);
+      shareDoc.intake.title = "Shared before confirming";
+      shareDoc.intake.date = "2027-03-10";
+      shareDoc.intake.dateConfirmed = false;
+      const c2 = await (await req("/api/plans", s, { method: "POST", body: JSON.stringify({ doc: shareDoc }) })).json();
+      const sh = await req(`/api/plans/${c2.id}/listing`, s, { method: "PUT", body: JSON.stringify({ planVersion: c2.version, description: "Flow check", tags: [] }) });
+      const shj = await sh.json();
+      check("Share with the date unconfirmed → date to be announced", sh.status === 200 && shj.listing?.date === null, `status ${sh.status}, date ${shj.listing?.date}`);
+      shareDoc.intake.dateConfirmed = true;
+      const sv2 = await req(`/api/plans/${c2.id}`, s, { method: "PUT", body: JSON.stringify({ version: c2.version, doc: shareDoc }) });
+      const sv2j = await sv2.json();
+      check("Saving the confirmed date updates the shared event", sv2.status === 200 && sv2j.listing?.date === "2027-03-10" && sv2j.listing?.description === "Flow check", `date ${sv2j.listing?.date}`);
+      const pub = await fetch(`${APP}/events/${c2.id}`);
+      check("Public event page shows the confirmed date", pub.status === 200 && /March 10|Mar 10/.test(await pub.text()), `status ${pub.status}`);
+      await req(`/api/plans/${c2.id}/listing`, s, { method: "DELETE" });
+      await req(`/api/plans/${c2.id}`, s, { method: "DELETE" });
+    }
+
     const del = await req(`/api/plans/${id}`, s, { method: "DELETE" });
     check("Delete own plan", del.status === 200, `status ${del.status}`);
   } finally {

@@ -19,6 +19,7 @@ export function PublishCard({
   dirty,
   isSample,
   initialListing,
+  syncedListing,
   onListingChange,
 }: {
   planId: string;
@@ -27,11 +28,19 @@ export function PublishCard({
   dirty: boolean;
   isSample: boolean;
   initialListing: Listing | null;
+  /** The shared copy as refreshed by the latest save (undefined until a save reports one). */
+  syncedListing?: Listing | null;
   /** Lets the plan page know when the card is published or removed. */
   onListingChange?: (listing: Listing | null) => void;
 }) {
   const confirm = useConfirm();
   const [listing, setListing] = useState<Listing | null>(initialListing);
+  // A save refreshes the shared event's details on the server; take that copy (adjusting state during render).
+  const [seenSync, setSeenSync] = useState(syncedListing);
+  if (syncedListing !== seenSync) {
+    setSeenSync(syncedListing);
+    if (syncedListing !== undefined && listing) setListing(syncedListing);
+  }
   // Unpublished cards start from a draft joined from the plan (purpose, description without money, guests, food).
   const [description, setDescription] = useState(() => (initialListing ? splitPlaybook(initialListing.description).description : draftPublicDescription(intake)));
   // After the event: a short note that turns the shared event into a playbook for other clubs.

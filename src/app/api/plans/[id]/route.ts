@@ -3,6 +3,8 @@ import { z } from "zod";
 import { authed, fail, json, readJson } from "@/lib/api";
 import { deletePlan, getPlan, rowToDoc, savePlan } from "@/lib/plans-repo";
 import { planDocSchema } from "@/lib/schema";
+import { troyLensEnabled } from "@/lib/troylens/card";
+import { syncListing } from "@/lib/troylens/repo";
 
 export async function GET(req: NextRequest, ctx: RouteContext<"/api/plans/[id]">) {
   const a = await authed(req, { mutating: false });
@@ -33,7 +35,10 @@ export async function PUT(req: NextRequest, ctx: RouteContext<"/api/plans/[id]">
     if (r.kind === "not_found") return fail(404, "Plan not found");
     if (r.kind === "conflict")
       return json({ error: "This plan was changed in another tab or device. Reload to see the latest version.", currentVersion: r.currentVersion }, 409);
-    return json({ id: r.row.id, version: r.row.version, updatedAt: r.row.updated_at });
+    // A shared event follows its plan: a newly confirmed date or venue reaches Discover on save.
+    // The plan is already saved, so a sync failure never fails the save.
+    const listing = troyLensEnabled() ? await syncListing(a.sb, r.row.id, parsed.data.doc.intake, r.row.version).catch(() => undefined) : undefined;
+    return json({ id: r.row.id, version: r.row.version, updatedAt: r.row.updated_at, ...(listing !== undefined && { listing }) });
   } catch {
     return fail(500, "Save failed. Your changes are still on this page — try again.");
   }
