@@ -136,6 +136,8 @@ export function Workspace({
   };
 
   /** Resolves true only when everything on screen is saved: false on failure, or if an edit landed while the save was in flight. */
+  // The server refreshes a shared event's date, time and location on every save; this is its latest copy.
+  const [syncedListing, setSyncedListing] = useState<Listing | null | undefined>(undefined);
   const doSave = useCallback(async (): Promise<boolean> => {
     const seqAtStart = editSeq.current;
     const settle = () => {
@@ -164,6 +166,7 @@ export function Workspace({
       }
       if (!res.ok) throw new Error(data.error ?? `Save failed (${res.status}).`);
       setMode({ ...mode, version: data.version, updatedAt: data.updatedAt });
+      if (data.listing !== undefined) setSyncedListing(data.listing);
       return settle();
     } catch (e) {
       setSave({ kind: "error", message: e instanceof Error ? e.message : "Save failed." });
@@ -558,7 +561,7 @@ export function Workspace({
               <Alert tone="info" title="Sharing with other clubs is unavailable">{troyLens.unavailable}</Alert>
             </div>
           ) : (
-            <PublishCard planId={mode.id} planVersion={mode.version} intake={doc.intake} dirty={save.kind !== "saved"} isSample={isSample} initialListing={troyLens.listing} onListingChange={(l) => setPublished(!!l)} />
+            <PublishCard planId={mode.id} planVersion={mode.version} intake={doc.intake} dirty={save.kind !== "saved"} isSample={isSample} initialListing={troyLens.listing} syncedListing={syncedListing} onListingChange={(l) => setPublished(!!l)} />
           )
         )}
 
