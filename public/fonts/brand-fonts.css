@@ -1,0 +1,27 @@
+/*
+ * National 2 (Klim Type Foundry) is a licensed font and is NOT included in this repo.
+ * To use it: buy a web licence, copy the .woff2 files into public/fonts/ with the names
+ * below, and set NEXT_PUBLIC_SELF_HOSTED_FONTS=true. Without the files the browser falls
+ * back to Hanken Grotesk automatically.
+ */
+@font-face {
+  font-family: "National 2";
+  src: url("/fonts/national-2-regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "National 2";
+  src: url("/fonts/national-2-medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "National 2";
+  src: url("/fonts/national-2-bold.woff2") format("woff2");
+  font-weight: 600 700;
+  font-style: normal;
+  font-display: swap;
+}

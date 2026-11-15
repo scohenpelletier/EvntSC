@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #faf6ef;
+  --card: #fffdf9;
+  --ink: #24211e;
+  --muted: #645c54;
+  --line: #e2d8cc;
+  --line-strong: #cbbfb1;
+  --cardinal: #990000;
+  --cardinal-ink: #7a0000;
+  --cardinal-wash: #f7e6e3;
+  --cardinal-deep: #5e0000;
+  --gold: #ffcc00;
+  --gold-soft: #ffd633;
+  --gold-wash: #fff4cc;
+  --amber: #8a5a00;
+  --amber-wash: #fbf0d9;
+  --green: #2f6b3a;
+  --green-wash: #e5f1e3;
+  --blue: #2b5876;
+  --blue-wash: #e4eef4;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-cardinal: var(--cardinal);
+  --color-cardinal-ink: var(--cardinal-ink);
+  --color-cardinal-wash: var(--cardinal-wash);
+  --color-cardinal-deep: var(--cardinal-deep);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-gold-wash: var(--gold-wash);
+  --color-amber: var(--amber);
+  --color-amber-wash: var(--amber-wash);
+  --color-green: var(--green);
+  --color-green-wash: var(--green-wash);
+  --color-blue: var(--blue);
+  --color-blue-wash: var(--blue-wash);
+  /* Brand sans is National 2 (licensed, self-hosted when available); Hanken Grotesk is the free stand-in. */
+  --font-sans: "national-2", "National 2", var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
+  --font-display: "adobe-caslon-pro", "Adobe Caslon Pro", var(--font-caslon), Georgia, serif;
+}
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+}
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "national-2", "National 2", var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
+}
+
+:focus-visible {
+  outline: 3px solid var(--cardinal);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* On cardinal surfaces a cardinal focus ring disappears; use USC gold instead. */
+.on-cardinal :focus-visible,
+.on-cardinal:focus-visible {
+  outline-color: var(--gold);
+}
+
+.font-display {
+  font-family: "adobe-caslon-pro", "Adobe Caslon Pro", var(--font-caslon), Georgia, serif;
+}
+
+/* In-app confirmation dialog (src/components/ConfirmDialog.tsx) */
+dialog.confirm-dialog[open] {
+  animation: confirm-in 140ms ease-out;
+}
+dialog.confirm-dialog[open]::backdrop {
+  animation: confirm-fade 140ms ease-out;
+}
+@keyframes confirm-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+}
+@keyframes confirm-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
