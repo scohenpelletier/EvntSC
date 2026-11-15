@@ -1,8 +1,10 @@
 # EvntSC
 
+EvntSC is the planning workspace for USC club officers: plan your event with confidence, and learn from what other clubs have done. It is for the officers running events, not the students attending them (students find events on EngageSC).
+
 EvntSC is an event planner for USC student club leaders. Describe an event in plain language (for example, “a networking night for 60 USC students and 5 alumni next month, $800 budget, want food, haven't booked a room”) and get an actionable plan: what to do and in what order, whom to contact, what to ask, and how to stay within budget. Change the event conversationally (“attendance increased to 100”) and EvntSC updates the affected parts of the plan, explains what changed, and keeps completed work, notes, and manually entered costs.
 
-Flow: describe → answer up to three quick questions → plan (Overview, Checklist, Contacts, Budget, Drafts) → update the event → save → export a planning packet.
+Flow: describe → answer up to three quick questions → plan (Overview, Checklist, Contacts, Budget, Drafts) → update the event → save → share with other clubs → after the event, add how it went.
 
 > Independent student-built prototype. Not affiliated with or endorsed by USC. It does not verify officer identity, approve events, book rooms, submit funding applications, or guarantee funding.
 
@@ -23,7 +25,7 @@ Flow: describe → answer up to three quick questions → plan (Overview, Checkl
 | Planning packet (print view and standalone HTML) | `src/lib/packet.ts`, `/api/plans/[id]/export` |
 | AI adapters: Gemini or Claude (bounded, validated, timeout) | `src/lib/ai/` (`index.ts`, `core.ts`, `gemini.ts`, `anthropic.ts`, `sanitize.ts`) |
 | Supabase Auth, owner-scoped storage, RLS | `src/lib/supabase/*`, `src/lib/plans-repo.ts`, `supabase/migrations/0001_event_plans.sql` |
-| TroyLens (optional): public event cards and Discover | `src/lib/troylens/`, `src/components/PublishCard.tsx`, `/discover`, `/events/[id]`, `supabase/migrations/0002_event_listings.sql` |
+| Sharing with other clubs and Discover (TroyLens, optional) | `src/lib/troylens/`, `src/components/PublishCard.tsx`, `/discover`, `/events/[id]`, `supabase/migrations/0002_event_listings.sql` |
 | Fictional sample plans | `src/lib/samples.ts` |
 | Tests | `tests/*.test.ts`, `scripts/check-authz.ts` |
 
@@ -57,20 +59,26 @@ The app runs without any configuration. Without Supabase, `/setup` explains the 
    - `SUPABASE_SERVICE_ROLE_KEY`, which only `npm run check:authz` and `npm run check:flow` use (to create and delete throwaway test users)
 6. Restart `npm run dev`. `NEXT_PUBLIC_*` values are inlined at build time, so rebuild after changing them.
 
-### TroyLens (optional extension)
+### Sharing with other clubs and Discover (TroyLens, optional)
 
-Public event cards and a Discover page. EvntSC does not depend on them.
+Officers can share an event with other clubs, and browse what other clubs have shared. EvntSC does not depend on this.
 
 1. In **SQL Editor**, run `supabase/migrations/0002_event_listings.sql` after `0001`.
 2. Set `NEXT_PUBLIC_ENABLE_TROYLENS=true` in `.env.local` and restart. Leave it unset or `false` and every TroyLens control, page and API route disappears (404). Planning, saving and export are unchanged.
 
 How it works:
 
-- **Publishing is explicit.** The plan page gets a *Public event card* section with a live preview. Publish, update and retract each ask for confirmation.
+- **Sharing is explicit.** The plan page gets a *Share with other clubs* section with a live preview. Share, update and stop sharing each ask for confirmation. The description starts as a draft joined from the plan (purpose, description without any sentence about money, guests, food). Once every checklist item is done, a large **Publish event!** button jumps there.
+- **Completed events become playbooks.** After the event date, the section offers a *How it went* note (turnout, what worked, what to change). It is stored after a `How it went:` marker in the same description column, and shown as its own block. A plan whose date has passed with every task done is tagged *Completed*.
 - **Only card fields are shared:** title, organizer, confirmed date/time, location (or *to be announced*), a public description the organizer writes, and up to 5 topic tags. Budgets, tasks, notes, questions and account data stay in `event_plans`.
 - The server builds the title, organizer, date, time and location from the **saved** plan, never from the request. An unconfirmed date or venue is published as *to be announced*. If a shared field changes after publishing, the plan page says the card is out of date.
 - `event_listings` reuses the plan ID and has **no owner column**. RLS lets anyone read cards, but only the owner of the matching plan can insert, update or delete one. Deleting a plan deletes its card.
-- **Discover** (`/discover`, no sign-in needed to browse) ranks upcoming events by how many of the viewer's interests they share, then by date. Signed-in users choose interests under **Settings** (account menu); they are saved on the account (Supabase user metadata, no extra table). The match label ("Matches your Tech interest") lists only interests the viewer chose. Nothing is tracked or learned; signed-out visitors see events by date.
+- **Discover** (`/discover`) is for officers and answers three questions from other clubs' shared events (your own are left out):
+  - *Ideas: what could our club host?* Past (labeled Completed) and upcoming events with an inferred format (panel, workshop, networking…), filterable by format and topic, with matches to your interests first.
+  - *Around your dates: what else is happening around our date?* Other clubs' events within a week of each of your upcoming plans, flagging similar audiences.
+  - *Clubs: who could we collaborate with?* Events grouped by club, with topics, formats and the next event.
+- **Plan something like this** (on idea cards and event pages) starts a plan with the original's format and topic only, credited on the plan as *Inspired by*. It never copies the other club's date, place, size, budget or food, and AI proposals naming the original club or title are dropped.
+- Interests are chosen under **Settings** and saved on the account (Supabase user metadata, no extra table). Nothing is tracked or learned.
 
 ### AI integration
 
@@ -94,7 +102,7 @@ npm run check:authz   # two-account RLS check against your Supabase project (nee
 APP_URL=http://localhost:3000 npm run check:authz   # also exercises the app's API routes (dev server running)
 npm run check:flow    # signed-in create → save → stale-save 409 → sign out/in → export → samples (dev server running)
 npm run check:ai      # live smoke test of the configured AI provider (2 real model calls, fictional data)
-npm run check:ai-planner  # live check of description, change, and draft AI paths with assertions (~10 real calls, fictional data)
+npm run check:ai-planner  # live check of description, change, and draft AI paths with assertions (~11 real calls, fictional data)
 ```
 
 ## How it stays honest
@@ -151,7 +159,7 @@ npm run check:ai-planner  # live check of description, change, and draft AI path
 - The AI rate limiter is in-memory per server instance.
 - When accounts are not configured, the local-development AI routes accept unauthenticated requests. Don't expose such a server publicly with an API key set.
 - Overnight events and multi-day events are not supported. TroyLens covers publishing and Discover only: no flyer/OCR ingestion, personal calendars, duplicate detection or onboarding.
-- TroyLens does not verify organizers or moderate cards. Anyone with an account can publish a card for their own plan.
+- Sharing does not verify organizers or moderate shared events. Anyone with an account can share their own plan. The event format in Discover is inferred from the title and description, and can be wrong.
 
 ### Fonts
 

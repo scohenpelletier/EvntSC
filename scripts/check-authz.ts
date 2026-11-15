@@ -216,7 +216,7 @@ async function appRouteChecks(planId: string, bSession: { access_token: string; 
   check("App: Settings page shows saved interests", settings.includes("Your interests") && settings.includes('aria-pressed="true"'));
   // The session cookie still holds the old metadata until refresh; Discover reads the fresh user from Supabase Auth.
   const bDisc = await (await req("/discover", bSession)).text();
-  check("App: Discover sorts by B's saved interests", /Sorted by your interests:.*Tech, Career/.test(bDisc.replace(/<!-- -->/g, "")));
+  check("App: Discover sorts by B's saved interests", /Your interests:.*Tech, Career/.test(bDisc.replace(/<!-- -->/g, "")));
   const aDisc = await (await req("/discover", aSession)).text();
   check("App: B's interests don't leak to A", !aDisc.includes("Sorted by your interests"));
 }

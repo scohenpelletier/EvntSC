@@ -162,3 +162,54 @@ export function listingColumns(id: string, fields: CardFields, body: Pick<Publis
     plan_version: planVersion,
   };
 }
+
+/** Sentences that mention money or funding stay private: the public card must not include budget details. */
+const PRIVATE_SENTENCE = /\$|\bbudget\b|\bfunding\b|\bfunds?\b|\bcosts?\b|\bUSG\b|\bquote\b|\bprice\b|\bcheap\b|\bexpensive\b/i;
+
+/**
+ * A starting public description, joined from the plan's shareable details:
+ * purpose + the plan's own description (minus any sentence about money) + guests + food.
+ * The organizer edits it before publishing; nothing is published automatically.
+ */
+export function draftPublicDescription(intake: Intake): string {
+  const sentence = (s: string) => {
+    const t = s.trim();
+    if (!t) return "";
+    const cap = t.charAt(0).toUpperCase() + t.slice(1);
+    return /[.!?]$/.test(cap) ? cap : `${cap}.`;
+  };
+  const description = (intake.description.match(/[^.!?]+[.!?]*/g) ?? [])
+    .map((s) => s.trim())
+    .filter((s) => s && !PRIVATE_SENTENCE.test(s))
+    .join(" ");
+  const guests =
+    intake.outsideSpeakers === "yes"
+      ? intake.guestCount
+        ? `${intake.guestCount} outside guest${intake.guestCount === 1 ? "" : "s"} will join us.`
+        : "Outside guests will join us."
+      : "";
+  const food = intake.food === "yes" ? "Food will be provided." : "";
+  const parts = [sentence(intake.purpose), sentence(description), guests, food].filter(Boolean);
+  if (!parts.length && intake.organization.trim()) parts.push(`Hosted by ${intake.organization.trim()}.`);
+  return parts.join(" ").slice(0, MAX_DESCRIPTION);
+}
+
+/**
+ * After the event, officers can add a short "how it went" note so the shared event becomes a
+ * playbook for other clubs. It's stored in the same description column, after this marker.
+ */
+export const PLAYBOOK_MARKER = "\n\nHow it went: ";
+
+export function joinPlaybook(description: string, howItWent: string): string {
+  const d = description.trim();
+  const h = howItWent.trim();
+  if (!h) return d.slice(0, MAX_DESCRIPTION);
+  const tail = `${PLAYBOOK_MARKER}${h}`;
+  return `${d.slice(0, Math.max(0, MAX_DESCRIPTION - tail.length))}${tail}`.trim().slice(0, MAX_DESCRIPTION);
+}
+
+export function splitPlaybook(stored: string): { description: string; howItWent: string } {
+  const i = stored.indexOf(PLAYBOOK_MARKER.trim());
+  if (i < 0) return { description: stored, howItWent: "" };
+  return { description: stored.slice(0, i).trim(), howItWent: stored.slice(i + PLAYBOOK_MARKER.trim().length).trim() };
+}

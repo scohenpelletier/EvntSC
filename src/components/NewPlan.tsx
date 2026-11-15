@@ -16,21 +16,28 @@ export function NewPlan({
   aiEnabled,
   mode = "describe",
   defaultOrganization = "",
+  seed,
 }: {
   storage: "remote" | "local";
   aiEnabled: boolean;
   mode?: "describe" | "flyer";
   /** From Settings: prefilled into the new plan's organization field. */
   defaultOrganization?: string;
+  /** "Plan something like this" from Discover: format, topic, and credit only. */
+  seed?: Partial<Intake>;
 }) {
   const router = useRouter();
   const [doc, setDoc] = useState<PlanDoc>(() => {
     const d = emptyDoc();
-    return defaultOrganization ? { ...d, intake: { ...d.intake, organization: defaultOrganization } } : d;
+    const intake = { ...d.intake, ...(defaultOrganization ? { organization: defaultOrganization } : {}), ...(seed ?? {}) };
+    if (seed && !seed.organization && defaultOrganization) intake.organization = defaultOrganization;
+    return { ...d, intake };
   });
   const [flyerSeed, setFlyerSeed] = useState<{ key: number; text: string; proposal: IntakeProposal } | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(!aiEnabled);
   useEffect(() => {
+    // The URL hash only exists in the browser, so it can't be read during the server render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync from window.location after mount
     if (window.location.hash === "#details") setDetailsOpen(true);
   }, []);
   const [formKey, setFormKey] = useState(0);
@@ -100,7 +107,7 @@ export function NewPlan({
         subtitle={
           mode === "flyer"
             ? "Upload a flyer and review what EvntSC reads from it. Anything it can’t see stays Unknown."
-            : "Describe your on-campus workshop or info session. You review everything before it becomes a plan."
+            : "Describe your event."
         }
         actions={
           mode === "flyer" ? (
@@ -115,6 +122,18 @@ export function NewPlan({
         }
       />
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+        {doc.intake.inspiredBy && mode !== "flyer" && (
+          <div className="mb-5 rounded-xl border border-gold bg-gold/15 p-4 text-sm">
+            <p>
+              Starting from{" "}
+              <Link href={`/events/${doc.intake.inspiredBy.listingId}`} className="font-semibold underline">
+                “{doc.intake.inspiredBy.title}”
+              </Link>
+              {doc.intake.inspiredBy.organizer ? ` by ${doc.intake.inspiredBy.organizer}` : ""}. Only the format and topic were copied. Add your own date,
+              attendance, and budget below.
+            </p>
+          </div>
+        )}
         <section className="rounded-xl border-2 border-cardinal/25 bg-card p-4 sm:p-6">
           <h2 className="flex items-center font-display text-xl font-bold">
             {step(1)}
@@ -177,9 +196,7 @@ export function NewPlan({
         <div className="sticky bottom-0 z-10 mt-6 flex flex-wrap items-center gap-3 border-t border-line bg-paper py-4">
           <Button variant="primary" onClick={create} disabled={busy} className="px-6 py-2.5 text-[15px]">
             {busy ? "Creating…" : "Create my plan"}
-          </Button>
-          <p className="text-xs text-muted">You can change anything later. Unknowns stay as open questions.</p>
-        </div>
+          </Button>        </div>
         {error && <Alert tone="error">{error} Your entries are still here.</Alert>}
       </div>
     </div>

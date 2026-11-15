@@ -137,3 +137,42 @@ describe("Discover ranking", () => {
     expect(others.every((r) => r.explanation === null)).toBe(true);
   });
 });
+
+describe("draft public description", async () => {
+  const { draftPublicDescription } = await import("@/lib/troylens/card");
+  const { emptyIntake } = await import("@/lib/schema");
+  it("joins purpose, description, guests, and food, leaving out sentences about money", () => {
+    const text = draftPublicDescription({
+      ...emptyIntake(),
+      purpose: "connect students with alumni",
+      description: "We're hosting a networking night for 60 USC students. We have an $800 budget, want food. Come meet people in tech",
+      outsideSpeakers: "yes",
+      guestCount: 5,
+      food: "yes",
+    });
+    expect(text).toBe(
+      "Connect students with alumni. We're hosting a networking night for 60 USC students. Come meet people in tech. 5 outside guests will join us. Food will be provided.",
+    );
+    expect(text).not.toMatch(/\$|budget/);
+  });
+  it("falls back to the club name, and is empty when there is nothing shareable", () => {
+    expect(draftPublicDescription({ ...emptyIntake(), organization: "Robotics Club" })).toBe("Hosted by Robotics Club.");
+    expect(draftPublicDescription(emptyIntake())).toBe("");
+  });
+});
+
+describe("how-it-went playbook note", async () => {
+  const { joinPlaybook, splitPlaybook, MAX_DESCRIPTION } = await import("@/lib/troylens/card");
+  it("round-trips the description and the note", () => {
+    const stored = joinPlaybook("A founders panel.", "About 50 came; the Q&A ran long.");
+    expect(stored).toBe("A founders panel.\n\nHow it went: About 50 came; the Q&A ran long.");
+    expect(splitPlaybook(stored)).toEqual({ description: "A founders panel.", howItWent: "About 50 came; the Q&A ran long." });
+  });
+  it("leaves plain descriptions alone and keeps the note within the length limit", () => {
+    expect(joinPlaybook("Just a description.", "  ")).toBe("Just a description.");
+    expect(splitPlaybook("Just a description.")).toEqual({ description: "Just a description.", howItWent: "" });
+    const long = joinPlaybook("x".repeat(MAX_DESCRIPTION), "It went well.");
+    expect(long.length).toBeLessThanOrEqual(MAX_DESCRIPTION);
+    expect(splitPlaybook(long).howItWent).toBe("It went well.");
+  });
+});

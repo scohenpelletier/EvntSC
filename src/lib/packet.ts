@@ -137,6 +137,7 @@ ${c.evaluation.scopeWarning ? `<div class="disclaimer"><strong>Scope limitation:
 <dt>Venue</dt><dd>${unk(i.venueName)} · ${esc(LABELS.venueType[i.venueType])} · ${esc(LABELS.venueStatus[i.venueStatus])}</dd>
 <dt>Recognition status</dt><dd>${esc(LABELS.recognition[i.recognition])}</dd>
 <dt>Food / speakers / vendors</dt><dd>Food: ${esc(LABELS.tri[i.food])} · Outside speakers: ${esc(LABELS.tri[i.outsideSpeakers])} · Vendors: ${esc(LABELS.tri[i.vendors])} (${esc(LABELS.vendorStatus[i.vendorStatus])})</dd>
+${i.inspiredBy ? `<dt>Inspired by</dt><dd>“${esc(i.inspiredBy.title)}”${i.inspiredBy.organizer ? ` by ${esc(i.inspiredBy.organizer)}` : ""}</dd>` : ""}
 <dt>Fundraising</dt><dd>${esc(LABELS.tri[i.fundraising])}</dd>
 </dl>
 ${i.description ? `<p>${esc(i.description)}</p>` : ""}

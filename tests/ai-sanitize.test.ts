@@ -91,3 +91,23 @@ describe("AI review sanitizing", () => {
     expect(r.questions).toHaveLength(1);
   });
 });
+
+describe("hedged food wording", async () => {
+  const { hedgedAbout, intakeProposalFrom } = await import("@/lib/ai/sanitize");
+  const base = {
+    title: null, eventType: null, organizerName: null, organization: null, dateText: null, date: null, startTime: null, endTime: null,
+    attendance: null, venueName: null, venueType: "unknown" as const, venueStatus: "unknown" as const, recognition: "unknown" as const,
+    food: "yes" as const, outsideSpeakers: "unknown" as const, vendors: "unknown" as const, fundraising: "unknown" as const,
+    budgetTarget: null, expenses: [], openQuestions: [],
+  };
+  it("keeps food unknown when the food sentence hedges, even if the model said yes", () => {
+    const p = intakeProposalFrom(base, "Thinking about a mixer sometime, maybe with snacks?");
+    expect(p.fields.food).toBe("unknown");
+    expect(p.notices.join(" ")).toMatch(/Food sounds undecided/);
+  });
+  it("keeps a clear food decision", () => {
+    expect(intakeProposalFrom(base, "We want food. Is the room free?").fields.food).toBe("yes");
+    expect(hedgedAbout("We'll order pizza for everyone.", /pizza/)).toBe(false);
+    expect(hedgedAbout("We might order pizza.", /pizza/)).toBe(true);
+  });
+});

@@ -27,6 +27,14 @@ export function EventSummary({ intake, plan }: { intake: Intake; plan: ComputedP
     ["Attendance", intake.attendance !== null ? `${intake.attendance}${intake.outsideSpeakers === "yes" && intake.guestCount !== null ? ` + ${intake.guestCount} guests` : ""}` : null],
     ["Venue", intake.venueName || intake.venueType !== "unknown" ? `${intake.venueName || LABELS.venueType[intake.venueType]} · ${LABELS.venueStatus[intake.venueStatus].toLowerCase()}` : null],
     ["Food", tri(intake.food)],
+    [
+      "Inspired by",
+      intake.inspiredBy ? (
+        <a href={`/events/${intake.inspiredBy.listingId}`} className="underline">
+          “{intake.inspiredBy.title}”{intake.inspiredBy.organizer ? ` by ${intake.inspiredBy.organizer}` : ""}
+        </a>
+      ) : null,
+    ],
     ["Accessibility", intake.accessibility === "yes" ? intake.accessibilityNotes || "Needs noted" : null],
   ];
   const shown = rows.filter(([, v]) => v !== null && v !== "");

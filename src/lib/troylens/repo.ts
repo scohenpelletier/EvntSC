@@ -12,6 +12,21 @@ export async function getListing(sb: SupabaseClient, id: string): Promise<Listin
   return data ? rowToListing(data as unknown as ListingRow) : null;
 }
 
+/**
+ * Cards for Discover: the last ~4 months (past events are useful as ideas) plus everything upcoming or TBA.
+ */
+export async function listForDiscover(sb: SupabaseClient, today: string): Promise<Listing[]> {
+  const since = new Date(Date.parse(today + "T12:00:00Z") - 120 * 86_400_000).toISOString().slice(0, 10);
+  const { data, error } = await sb
+    .from("event_listings")
+    .select(LISTING_COLUMNS)
+    .or(`event_date.gte.${since},event_date.is.null`)
+    .order("event_date", { ascending: true, nullsFirst: false })
+    .limit(300);
+  if (error) throw new Error(error.message);
+  return (data as unknown as ListingRow[]).map(rowToListing);
+}
+
 /** Upcoming and TBA listings. Past events are filtered in SQL so the page never loads them. */
 export async function listUpcoming(sb: SupabaseClient, today: string): Promise<Listing[]> {
   const { data, error } = await sb

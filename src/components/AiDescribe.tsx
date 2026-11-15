@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { IntakeProposal } from "@/lib/ai/sanitize";
 import { formatDate } from "@/lib/dates";
 import { demoProposal, EXAMPLE_PROMPT } from "@/lib/demo-fixtures";
+import { withoutOriginalIdentity } from "@/lib/troylens/discover";
 import { LABELS, type BudgetLine, type Intake } from "@/lib/schema";
 import { Alert, Button, Tag, TextArea } from "./ui";
 
@@ -75,7 +76,12 @@ export function AiDescribe({
       const res = await fetch("/api/ai/intake", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ description: text }) });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
-      const p = data.proposal as IntakeProposal;
+      const raw = data.proposal as IntakeProposal;
+      // Starting from another club's event: never adopt that club's name or event title as ours.
+      const own = withoutOriginalIdentity(raw.fields, intake.inspiredBy);
+      const p: IntakeProposal = own.dropped.length
+        ? { ...raw, fields: own.fields, notices: [...raw.notices, `Kept your own ${own.dropped.join(" and ")}: the original event is credited separately.`] }
+        : raw;
       setDemo(false);
       setProposal(p);
       const acc: Record<string, boolean> = {};
@@ -122,9 +128,6 @@ export function AiDescribe({
         onChange={(e) => setText(e.target.value)}
         placeholder={EXAMPLE_PROMPT}
       />
-      <button type="button" onClick={() => setText(EXAMPLE_PROMPT)} className="text-left text-xs text-muted underline hover:text-ink">
-        Use the example: “{EXAMPLE_PROMPT}”
-      </button>
       {aiEnabled ? (
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="primary" onClick={run} disabled={busy || text.trim().length < 10}>

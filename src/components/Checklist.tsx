@@ -6,6 +6,7 @@ import { RULES, SOURCES } from "@/lib/policy/registry";
 import { newId, type AiNote, type TaskState } from "@/lib/schema";
 import { AREAS, type Designation } from "@/lib/policy/engine";
 import { RESOURCES } from "@/lib/resources";
+import { DETAIL_ACTIONS } from "@/lib/tasks/detail-actions";
 import { completeTask, reopenTask, startTask, upsert, type MergedTask } from "@/lib/tasks/reconcile";
 import { useConfirm } from "./ConfirmDialog";
 import { Button, Card, cx, StatusBadge, Tag, TextField } from "./ui";
@@ -28,7 +29,13 @@ export function TypeTag({ type, designation }: { type: MergedTask["type"]; desig
   return <Tag tone="blue">Needs confirmation</Tag>;
 }
 
-type Extra = { highlight: { added: string[]; recheck: string[] }; onDraft: (task: MergedTask) => void; onGotoContacts: () => void };
+type Extra = {
+  highlight: { added: string[]; recheck: string[] };
+  onDraft: (task: MergedTask) => void;
+  onGotoContacts: () => void;
+  /** Opens Edit details at the form field with this label. */
+  onEditDetail?: (fieldLabel: string) => void;
+};
 
 function TaskCard({
   task,
@@ -39,6 +46,7 @@ function TaskCard({
   highlight,
   onDraft,
   onGotoContacts,
+  onEditDetail,
 }: { task: MergedTask; all: MergedTask[]; states: TaskState[]; aiNote?: AiNote; onChange: Props["onChange"] } & Extra) {
   const confirm = useConfirm();
   const rule = task.ruleId ? RULES[task.ruleId] : null;
@@ -54,6 +62,7 @@ function TaskCard({
   const late = task.derived?.lateNote;
   const statusValue = task.state?.status ?? "open";
   const canDraft = contacts.length > 0 || task.id === "sugg:guest-invite";
+  const detail = onEditDetail && task.applicable && task.status !== "completed" ? DETAIL_ACTIONS[task.id] : undefined;
 
   return (
     <li
@@ -124,8 +133,17 @@ function TaskCard({
         </div>
       )}
 
-      {(task.targetDate || (canDraft && task.applicable && task.status !== "completed")) && (
+      {(task.targetDate || detail || (canDraft && task.applicable && task.status !== "completed")) && (
         <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+          {detail && (
+            <button
+              type="button"
+              onClick={() => onEditDetail!(detail.field)}
+              className="rounded-md bg-cardinal px-3 py-1.5 font-semibold text-white hover:bg-cardinal-ink"
+            >
+              + {detail.label}
+            </button>
+          )}
           {task.targetDate && (
             <span className={cx("font-semibold text-cardinal", task.overdue && task.status !== "completed" && "underline")}>
               {formatDate(task.targetDate, { weekday: true })}
@@ -257,13 +275,13 @@ function AddTask({ states, onChange }: { states: TaskState[]; onChange: Props["o
   );
 }
 
-export function Checklist({ tasks, states, aiNotes, onChange, highlight, onDraft, onGotoContacts }: Props & Extra) {
+export function Checklist({ tasks, states, aiNotes, onChange, highlight, onDraft, onGotoContacts, onEditDetail }: Props & Extra) {
   const sorted = sortTasks(tasks);
   const groups = AREAS.map((a) => ({ key: a.id, title: a.title, items: sorted.filter((t) => t.applicable && t.derived?.area === a.id) })).filter((g) => g.items.length > 0);
   const custom = sorted.filter((t) => t.type === "custom");
   const na = sorted.filter((t) => !t.applicable);
   const noteFor = (t: MergedTask) => (t.ruleId ? aiNotes.find((n) => n.ruleId === t.ruleId) : undefined);
-  const extra = { highlight, onDraft, onGotoContacts };
+  const extra = { highlight, onDraft, onGotoContacts, onEditDetail };
 
   return (
     <div className="space-y-6">
